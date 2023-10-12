@@ -24,7 +24,7 @@ public class Game {
     public final double SIZE = 500;
     public final double LINE_LENGTH = 700;
     public final int LINE_COUNT = 1000;
-    private final int BOT_NUMBERS = 4;
+    private final int BOT_NUMBERS = 3;
     private final int DAMAGE = 25;
     private int kills = 0;
     private int deaths = 0;

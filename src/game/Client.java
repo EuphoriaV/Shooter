@@ -27,7 +27,10 @@ public class Client {
 
         Timer moveUpdate = new Timer(3, e -> {
             if (isMoveLeft() || isMoveRight() || isMoveBackward() || isMoveForward()) {
+                panel.keepMoving();
                 move();
+            } else {
+                panel.stopMoving();
             }
             panel.repaint();
         });

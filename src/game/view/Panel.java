@@ -3,29 +3,20 @@ package game.view;
 import game.Client;
 import game.Game;
 import game.Player;
-import game.figure.Circle;
-import game.figure.Figure;
-import game.figure.Line;
 import game.figure.Point;
 import game.figure.Polygon;
+import game.figure.*;
 import game.util.MathUtils;
-import java.awt.AWTException;
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.Robot;
-import java.awt.Toolkit;
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
-import javax.swing.JPanel;
 
 public class Panel extends JPanel {
     private final Client client;
@@ -33,6 +24,7 @@ public class Panel extends JPanel {
     private final int HEIGHT;
     private final int RADAR_SIZE = 300;
     private final double DISTANCE = 15;
+    private double movementNumber = 0;
 
     public Panel(Client client) {
         this.client = client;
@@ -96,7 +88,9 @@ public class Panel extends JPanel {
             g2d.setPaint(new Color(0, 0, 0, (int) (255 * (len / game.LINE_LENGTH))));
             g2d.drawLine(i, (int) (HEIGHT / 2 - height), i, (int) (HEIGHT / 2 + height));
         }
+
         drawBotsHP(g2d);
+        drawGun(g2d);
     }
 
     private void drawBotsHP(Graphics2D g2d) {
@@ -108,7 +102,10 @@ public class Panel extends JPanel {
             double r = (MathUtils.getAngle(lines.get(0)) + 2 * Math.PI) % (2 * Math.PI);
             double botAngle = (MathUtils.getAngle(line) + 2 * Math.PI) % (2 * Math.PI);
             if (l > r) {
-                r += 2 * Math.PI;
+                l -= 2 * Math.PI;
+            }
+            if (botAngle > r) {
+                botAngle -= 2 * Math.PI;
             }
             game.intersect(game.getPlayer(), line);
             if (botAngle <= r && botAngle >= l) {
@@ -139,6 +136,18 @@ public class Panel extends JPanel {
                 }
             }
         }
+    }
+
+    private void drawGun(Graphics2D g2d) {
+        BufferedImage image;
+        try {
+            image = ImageIO.read(new File("images", "gun.png"));
+        } catch (IOException e) {
+            System.err.println("Error while reading file: " + e);
+            return;
+        }
+        int gunHeight = (int) (7 * HEIGHT / 10 - Math.sin(movementNumber) * HEIGHT / 10);
+        g2d.drawImage(image, 2 * WIDTH / 3, gunHeight, 6 * WIDTH / 17, 2 * HEIGHT / 5, null);
     }
 
     private void drawMap(Graphics2D g2d) {
@@ -172,7 +181,6 @@ public class Panel extends JPanel {
         g2d.drawLine(WIDTH / 2 + 5, HEIGHT / 2, WIDTH / 2 + 10, HEIGHT / 2);
         g2d.drawLine(WIDTH / 2, HEIGHT / 2 - 5, WIDTH / 2, HEIGHT / 2 - 10);
         g2d.drawLine(WIDTH / 2, HEIGHT / 2 + 5, WIDTH / 2, HEIGHT / 2 + 10);
-
         //drawing health bar
         int playersHP = game.getPlayer().getHealthPoints();
         g2d.setPaint(new Color(255, 255, 255, 100));
@@ -185,7 +193,6 @@ public class Panel extends JPanel {
             (int) ((WIDTH / 5 - 10) * (playersHP / 100.0)),
             HEIGHT / 20 - 10
         );
-
         //draw stats
         g2d.setFont(new Font("Verdana", Font.BOLD, HEIGHT / 20));
         g2d.setColor(Color.WHITE);
@@ -293,6 +300,7 @@ public class Panel extends JPanel {
             @Override
             public void mousePressed(MouseEvent e) {
                 client.shoot();
+                movementNumber = Math.PI / 2;
             }
 
             @Override
@@ -307,5 +315,16 @@ public class Panel extends JPanel {
             public void mouseExited(MouseEvent e) {
             }
         });
+    }
+
+    public void keepMoving() {
+        movementNumber = (movementNumber + 0.1) % (2 * Math.PI);
+    }
+
+    public void stopMoving() {
+        movementNumber = (movementNumber + 0.1) % (2 * Math.PI);
+        if (movementNumber <= 0.1 || Math.abs(movementNumber - Math.PI) <= 0.1) {
+            movementNumber = 0;
+        }
     }
 }

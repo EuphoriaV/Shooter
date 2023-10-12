@@ -2,6 +2,7 @@ package game;
 
 import game.figure.Line;
 import game.util.MathUtils;
+
 import java.util.*;
 
 public class BotAI {
@@ -68,6 +69,6 @@ public class BotAI {
         } else if (angleDistance < -Math.PI) {
             angleDistance += 2 * Math.PI;
         }
-        game.turn(bot, angleDistance / 20);
+        game.turn(bot, angleDistance / 7);
     }
 }
