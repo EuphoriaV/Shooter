@@ -3,17 +3,29 @@ package game.view;
 import game.Client;
 import game.Game;
 import game.Player;
+import game.figure.Circle;
+import game.figure.Figure;
+import game.figure.Line;
 import game.figure.Point;
 import game.figure.Polygon;
-import game.figure.*;
 import game.util.MathUtils;
-import javax.swing.*;
-import java.awt.*;
+import java.awt.AWTException;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.image.BufferedImage;
 import java.util.List;
+import javax.swing.JPanel;
 
 public class Panel extends JPanel {
     private final Client client;
@@ -209,24 +221,33 @@ public class Panel extends JPanel {
         addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
-                var curPos = e.getLocationOnScreen();
-                double dx = WIDTH / 2.0 - curPos.getX();
-                double alpha = (dx * (Math.PI / 3)) / WIDTH;
-                client.turn(alpha);
-                robot.mouseMove(WIDTH / 2, HEIGHT / 2);
+                mouseMove(e, robot);
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                mouseMove(e, robot);
             }
         });
+    }
+
+    private void mouseMove(MouseEvent e, Robot robot) {
+        var curPos = e.getLocationOnScreen();
+        double dx = WIDTH / 2.0 - curPos.getX();
+        double alpha = (dx * (Math.PI / 3)) / WIDTH;
+        client.turn(alpha);
+        robot.mouseMove(WIDTH / 2, HEIGHT / 2);
     }
 
     private void listenShooting() {
         addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                client.shoot();
             }
 
             @Override
             public void mousePressed(MouseEvent e) {
+                client.shoot();
             }
 
             @Override
