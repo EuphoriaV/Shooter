@@ -2,11 +2,7 @@ package game;
 
 import game.figure.Line;
 import game.util.MathUtils;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class BotAI {
     private final Game game;
@@ -39,9 +35,7 @@ public class BotAI {
 
         List<Player> visibleEnemies = new ArrayList<>();
         for (Player enemy : game.getEnemies(bot)) {
-            Line line = new Line(bot.getPos(), enemy.getPos());
-            game.intersect(bot, line);
-            if (MathUtils.inPolygon(line.getY(), enemy.getModel())) {
+            if (game.isVisible(bot, enemy)) {
                 visibleEnemies.add(enemy);
             }
         }

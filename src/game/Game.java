@@ -1,12 +1,18 @@
 package game;
 
-import game.figure.*;
+import game.figure.Circle;
+import game.figure.Figure;
+import game.figure.Line;
+import game.figure.Point;
+import game.figure.Polygon;
 import game.util.MathUtils;
 import game.view.Texture;
-import javax.swing.*;
 import java.util.ArrayList;
 import java.util.List;
-import static game.Player.*;
+import javax.swing.Timer;
+import static game.Player.PLAYER_WIDTH;
+import static game.Player.STEP_LENGTH;
+import static game.Player.VIEW_ANGLE;
 
 public class Game {
     private final Player player;
@@ -18,7 +24,7 @@ public class Game {
     public final double SIZE = 500;
     public final double LINE_LENGTH = 700;
     public final int LINE_COUNT = 1000;
-    private final int BOT_NUMBERS = 3;
+    private final int BOT_NUMBERS = 4;
     private final int DAMAGE = 25;
     private int kills = 0;
     private int deaths = 0;
@@ -316,6 +322,12 @@ public class Game {
             enemies.add(this.player);
             return enemies;
         }
+    }
+
+    public boolean isVisible(Player player, Player target) {
+        Line line = new Line(player.getPos(), target.getPos());
+        intersect(player, line);
+        return MathUtils.inPolygon(line.getY(), target.getModel());
     }
 
     public int getKills() {

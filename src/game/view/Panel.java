@@ -51,6 +51,7 @@ public class Panel extends JPanel {
         Graphics2D g2d = (Graphics2D) g;
         drawBackground(g2d);
         drawPov(g2d);
+        g2d.setStroke(new BasicStroke(1));
         drawMap(g2d);
         drawHud(g2d);
     }
@@ -95,6 +96,49 @@ public class Panel extends JPanel {
             g2d.setPaint(new Color(0, 0, 0, (int) (255 * (len / game.LINE_LENGTH))));
             g2d.drawLine(i, (int) (HEIGHT / 2 - height), i, (int) (HEIGHT / 2 + height));
         }
+        drawBotsHP(g2d);
+    }
+
+    private void drawBotsHP(Graphics2D g2d) {
+        Game game = client.getGame();
+        List<Line> lines = game.getLines();
+        for (Player bot : game.getBots()) {
+            Line line = new Line(game.getPlayer().getPos(), bot.getPos());
+            double l = (MathUtils.getAngle(lines.get(lines.size() - 1)) + 2 * Math.PI) % (2 * Math.PI);
+            double r = (MathUtils.getAngle(lines.get(0)) + 2 * Math.PI) % (2 * Math.PI);
+            double botAngle = (MathUtils.getAngle(line) + 2 * Math.PI) % (2 * Math.PI);
+            if (l > r) {
+                r += 2 * Math.PI;
+            }
+            game.intersect(game.getPlayer(), line);
+            if (botAngle <= r && botAngle >= l) {
+                int column = (int) (WIDTH * ((r - botAngle) / (r - l)));
+                double height = (HEIGHT * DISTANCE / MathUtils.length(line));
+                if (game.isVisible(game.getPlayer(), bot)) {
+                    int botsHp = bot.getHealthPoints();
+                    g2d.setPaint(new Color(255, 255, 255, 100));
+                    g2d.setStroke(new BasicStroke(10));
+                    g2d.drawRect(
+                        (int) (column - height / 2),
+                        (int) (HEIGHT / 2 - height * 1.4),
+                        (int) (height),
+                        (int) (3 * height / 10)
+                    );
+                    g2d.setPaint(new Color(
+                        (int) (255 - 255 * (botsHp / 100.0)),
+                        (int) (255 * (botsHp / 100.0)),
+                        0,
+                        100
+                    ));
+                    g2d.fillRect(
+                        (int) (column - height / 2 + 5),
+                        (int) (HEIGHT / 2 - height * 1.4 + 5),
+                        (int) ((height - 10) * (botsHp / 100.0)),
+                        (int) (3 * height / 10 - 10)
+                    );
+                }
+            }
+        }
     }
 
     private void drawMap(Graphics2D g2d) {
@@ -123,7 +167,7 @@ public class Panel extends JPanel {
     private void drawHud(Graphics2D g2d) {
         Game game = client.getGame();
         //drawing crosshair
-        g2d.setPaint(Color.WHITE);
+        g2d.setColor(Color.WHITE);
         g2d.drawLine(WIDTH / 2 - 5, HEIGHT / 2, WIDTH / 2 - 10, HEIGHT / 2);
         g2d.drawLine(WIDTH / 2 + 5, HEIGHT / 2, WIDTH / 2 + 10, HEIGHT / 2);
         g2d.drawLine(WIDTH / 2, HEIGHT / 2 - 5, WIDTH / 2, HEIGHT / 2 - 10);
@@ -131,9 +175,10 @@ public class Panel extends JPanel {
 
         //drawing health bar
         int playersHP = game.getPlayer().getHealthPoints();
+        g2d.setPaint(new Color(255, 255, 255, 100));
         g2d.setStroke(new BasicStroke(10));
         g2d.drawRect(WIDTH / 40, 9 * HEIGHT / 10, WIDTH / 5, HEIGHT / 20);
-        g2d.setPaint(new Color((int) (255 - 255 * (playersHP / 100.0)), (int) (255 * (playersHP / 100.0)), 0));
+        g2d.setPaint(new Color((int) (255 - 255 * (playersHP / 100.0)), (int) (255 * (playersHP / 100.0)), 0, 100));
         g2d.fillRect(
             WIDTH / 40 + 5,
             9 * HEIGHT / 10 + 5,
