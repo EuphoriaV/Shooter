@@ -1,30 +1,19 @@
 package game.view;
 
 import game.Client;
+import game.Game;
 import game.Player;
-import game.figure.Circle;
-import game.figure.Figure;
-import game.figure.Line;
 import game.figure.Point;
 import game.figure.Polygon;
+import game.figure.*;
 import game.util.MathUtils;
-import java.awt.AWTException;
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.Robot;
-import java.awt.Toolkit;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.image.BufferedImage;
 import java.util.List;
-import javax.swing.JPanel;
 
 public class Panel extends JPanel {
     private final Client client;
@@ -40,86 +29,50 @@ public class Panel extends JPanel {
         HEIGHT = (int) screen.getHeight();
         setPreferredSize(screen);
         setLayout(null);
-
-        final BufferedImage BLANK_IMG = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
-        final Cursor BLANK_CURSOR = Toolkit.getDefaultToolkit().createCustomCursor(
-            BLANK_IMG, new java.awt.Point(0, 0), "blank cursor"
-        );
-        setCursor(BLANK_CURSOR);
-
-        Robot robot;
-        try {
-            robot = new Robot();
-        } catch (AWTException e) {
-            throw new RuntimeException(e);
-        }
-        addMouseMotionListener(new MouseMotionAdapter() {
-            @Override
-            public void mouseMoved(MouseEvent e) {
-                var curPos = e.getLocationOnScreen();
-                double dx = WIDTH / 2.0 - curPos.getX();
-                double alpha = (dx * (Math.PI / 3)) / WIDTH;
-                client.turn(alpha);
-                robot.mouseMove(WIDTH / 2, HEIGHT / 2);
-            }
-        });
-        addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                client.shoot();
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-            }
-        });
+        hideCursor();
+        listenShooting();
+        listenTurning();
     }
 
     @Override
     public void paint(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
-        g2d.setPaint(Color.BLACK);
-        g2d.fillRect(0, 0, WIDTH, HEIGHT / 2);
-        g2d.setStroke(new BasicStroke(2));
-        g2d.setPaint(Color.DARK_GRAY);
-        g2d.fillRect(0, HEIGHT / 2, WIDTH, HEIGHT);
-
+        drawBackground(g2d);
         drawPov(g2d);
         drawMap(g2d);
         drawHud(g2d);
     }
 
+    private void drawBackground(Graphics2D g2d) {
+        g2d.setPaint(Color.BLACK);
+        g2d.fillRect(0, 0, WIDTH, HEIGHT / 2);
+        g2d.setStroke(new BasicStroke(2));
+        g2d.setPaint(Color.DARK_GRAY);
+        g2d.fillRect(0, HEIGHT / 2, WIDTH, HEIGHT);
+    }
+
     private void drawPov(Graphics2D g2d) {
-        client.getGame().updateLines();
-        List<Line> lines = client.getGame().getLines();
+        Game game = client.getGame();
+        game.updateLines();
+        List<Line> lines = game.getLines();
         if (lines == null || lines.isEmpty()) {
             return;
         }
+
         for (int i = 0; i < WIDTH; i++) {
-            int index = (i * client.getGame().LINE_COUNT) / WIDTH;
+            int index = (i * game.LINE_COUNT) / WIDTH;
             Line line = lines.get(index);
             double len = MathUtils.length(line);
-            double height = (HEIGHT * DISTANCE / len);
+            double height = (HEIGHT * DISTANCE / MathUtils.length(line));
+
             Image image = null;
-            Figure figure = client.getGame().getFigure(line.getY());
+            Figure figure = game.getFigure(line.getY());
             if (figure instanceof Polygon polygon) {
                 image = getImage(polygon, line.getY());
             } else if (figure instanceof Circle circle) {
                 image = getImage(circle, line.getY());
             } else {
-                Player bot = client.getGame().getBot(line.getY());
+                Player bot = game.getBot(line.getY());
                 if (bot != null) {
                     image = getImage(bot.getModel(), line.getY());
                 }
@@ -127,16 +80,17 @@ public class Panel extends JPanel {
             if (image != null) {
                 g2d.drawImage(image, i, (int) (HEIGHT / 2 - height), 1, (int) (2 * height), null);
             }
-            g2d.setPaint(new Color(0, 0, 0, (int) (255 * (len / client.getGame().LINE_LENGTH))));
+            g2d.setPaint(new Color(0, 0, 0, (int) (255 * (len / game.LINE_LENGTH))));
             g2d.drawLine(i, (int) (HEIGHT / 2 - height), i, (int) (HEIGHT / 2 + height));
         }
     }
 
     private void drawMap(Graphics2D g2d) {
+        Game game = client.getGame();
         g2d.setPaint(Color.BLACK);
         g2d.fillRect(0, 0, RADAR_SIZE, RADAR_SIZE);
         g2d.setPaint(Color.WHITE);
-        for (Figure figure : client.getGame().getFigures()) {
+        for (Figure figure : game.getFigures()) {
             if (figure instanceof Circle circle) {
                 drawCircle(g2d, circle);
             }
@@ -146,23 +100,25 @@ public class Panel extends JPanel {
         }
 
         g2d.setColor(Color.GREEN);
-        drawPolygon(g2d, client.getGame().getPlayer().getModel());
+        drawPolygon(g2d, game.getPlayer().getModel());
 
-        for (var bot : client.getGame().getBots()) {
+        for (var bot : game.getBots()) {
             g2d.setColor(Color.RED);
             drawPolygon(g2d, bot.getModel());
         }
     }
 
     private void drawHud(Graphics2D g2d) {
+        Game game = client.getGame();
         //drawing crosshair
         g2d.setPaint(Color.WHITE);
         g2d.drawLine(WIDTH / 2 - 5, HEIGHT / 2, WIDTH / 2 - 10, HEIGHT / 2);
         g2d.drawLine(WIDTH / 2 + 5, HEIGHT / 2, WIDTH / 2 + 10, HEIGHT / 2);
         g2d.drawLine(WIDTH / 2, HEIGHT / 2 - 5, WIDTH / 2, HEIGHT / 2 - 10);
         g2d.drawLine(WIDTH / 2, HEIGHT / 2 + 5, WIDTH / 2, HEIGHT / 2 + 10);
+
         //drawing health bar
-        int playersHP = client.getGame().getPlayer().getHealthPoints();
+        int playersHP = game.getPlayer().getHealthPoints();
         g2d.setStroke(new BasicStroke(10));
         g2d.drawRect(WIDTH / 40, 9 * HEIGHT / 10, WIDTH / 5, HEIGHT / 20);
         g2d.setPaint(new Color((int) (255 - 255 * (playersHP / 100.0)), (int) (255 * (playersHP / 100.0)), 0));
@@ -172,11 +128,12 @@ public class Panel extends JPanel {
             (int) ((WIDTH / 5 - 10) * (playersHP / 100.0)),
             HEIGHT / 20 - 10
         );
+
         //draw stats
         g2d.setFont(new Font("Verdana", Font.BOLD, HEIGHT / 20));
         g2d.setColor(Color.WHITE);
-        g2d.drawString("Kills: " + client.getGame().getKills(), WIDTH / 50, 17 * HEIGHT / 20);
-        g2d.drawString("Deaths: " + client.getGame().getDeaths(), WIDTH / 50, 3 * HEIGHT / 4);
+        g2d.drawString("Kills: " + game.getKills(), WIDTH / 50, 17 * HEIGHT / 20);
+        g2d.drawString("Deaths: " + game.getDeaths(), WIDTH / 50, 3 * HEIGHT / 4);
     }
 
     private void drawPolygon(Graphics2D g2d, Polygon polygon) {
@@ -232,5 +189,57 @@ public class Panel extends JPanel {
             numberOfColumn = angle * circle.radius() / (2 * DISTANCE);
         }
         return texture.getImage()[(int) (numberOfColumn * texture.getImage().length) % texture.getImage().length];
+    }
+
+    private void hideCursor() {
+        final BufferedImage BLANK_IMG = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+        final Cursor BLANK_CURSOR = Toolkit.getDefaultToolkit().createCustomCursor(
+            BLANK_IMG, new java.awt.Point(0, 0), "blank cursor"
+        );
+        setCursor(BLANK_CURSOR);
+    }
+
+    private void listenTurning() {
+        Robot robot;
+        try {
+            robot = new Robot();
+        } catch (AWTException e) {
+            throw new RuntimeException(e);
+        }
+        addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                var curPos = e.getLocationOnScreen();
+                double dx = WIDTH / 2.0 - curPos.getX();
+                double alpha = (dx * (Math.PI / 3)) / WIDTH;
+                client.turn(alpha);
+                robot.mouseMove(WIDTH / 2, HEIGHT / 2);
+            }
+        });
+    }
+
+    private void listenShooting() {
+        addMouseListener(new MouseListener() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                client.shoot();
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+            }
+        });
     }
 }

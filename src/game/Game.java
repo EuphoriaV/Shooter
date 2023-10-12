@@ -35,13 +35,9 @@ public class Game {
         initBots();
 
         botAI = new BotAI(this);
-        Timer setDirectionsTimer = new Timer(1000, e -> {
-            botAI.setDirections();
-        });
+        Timer setDirectionsTimer = new Timer(1000, e -> botAI.setDirections());
         setDirectionsTimer.start();
-        Timer moveBotsTimer = new Timer(10, e -> {
-            botAI.moveBots();
-        });
+        Timer moveBotsTimer = new Timer(10, e -> botAI.moveBots());
         moveBotsTimer.start();
     }
 
@@ -149,6 +145,7 @@ public class Game {
             player.getPos().x() + Math.cos(alpha) * STEP_LENGTH,
             player.getPos().y() + Math.sin(alpha) * STEP_LENGTH
         );
+
         List<Line> walls = getWalls(player);
         for (Line wall : walls) {
             Line shortestWay = MathUtils.shortestWay(newPos, wall);
@@ -159,6 +156,7 @@ public class Game {
                 MathUtils.getLine(shortestWay.getY(), MathUtils.getAngle(shortestWay) + Math.PI, PLAYER_WIDTH);
             newPos = distanceBetweenWall.getY();
         }
+
         for (Line wall : walls) {
             Line shortestWay = MathUtils.shortestWay(newPos, wall);
             if (MathUtils.length(shortestWay) + MathUtils.EPS < PLAYER_WIDTH) {

@@ -34,8 +34,9 @@ public class BotAI {
     }
 
     private void move(Player bot) {
-        lastShot.put(bot, lastShot.getOrDefault(bot, 0) + 1);
         game.move(bot, botsDirections.getOrDefault(bot, 0.0));
+        lastShot.put(bot, lastShot.getOrDefault(bot, 0) + 1);
+
         List<Player> visibleEnemies = new ArrayList<>();
         for (Player enemy : game.getEnemies(bot)) {
             Line line = new Line(bot.getPos(), enemy.getPos());
@@ -47,6 +48,7 @@ public class BotAI {
         if (visibleEnemies.isEmpty()) {
             visibleEnemies = game.getEnemies(bot);
         }
+
         double min = Integer.MAX_VALUE;
         Player closestEnemy = null;
         for (Player visibleEnemy : visibleEnemies) {
@@ -59,6 +61,7 @@ public class BotAI {
         if (closestEnemy == null) {
             return;
         }
+
         Line line = new Line(bot.getPos(), closestEnemy.getPos());
         game.intersect(bot, line);
         if (MathUtils.inPolygon(line.getY(), closestEnemy.getModel()) && lastShot.get(bot) > 10) {
@@ -71,6 +74,6 @@ public class BotAI {
         } else if (angleDistance < -Math.PI) {
             angleDistance += 2 * Math.PI;
         }
-        game.turn(bot, angleDistance / 7);
+        game.turn(bot, angleDistance / 20);
     }
 }
