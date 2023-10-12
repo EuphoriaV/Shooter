@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MathUtils {
-    public static final double EPS = 1e-5;
+    public static final double EPS = 1e-4;
 
     public static Line getLine(Point point, double alpha, double length) {
         return new Line(point, new Point(
